@@ -1,15 +1,15 @@
 use super::token;
 use super::token::Token;
 
-pub struct Lexer{
-    input: String,      
+pub struct Lexer<'a>{
+    input: &'a str,      
     position: usize,       // the current position in the input
     read_position: usize,  // the currently read position in the input
     ch: char,              // the character that is processed
 }
 
-impl Lexer{
-    pub fn new(input: String) -> Lexer {
+impl<'a> Lexer<'a>{
+    pub fn new(input: &'a str) -> Lexer {
         let mut l = Lexer {input, position: 0, read_position: 0, ch: '\0'};
         l.read_char();
         l
@@ -98,7 +98,7 @@ mod lexer_test{
     use super::*;
     #[test]
     fn test_next_token(){
-        let input = String::from("let five = 5;
+        let input: &str = "let five = 5;
         let ten = 10;
         let add = fn(x, y){
             x + y;
@@ -113,7 +113,7 @@ mod lexer_test{
         } else {
             return false;
         }
-        ");
+        ";
 
         let expected_output = [
             Token::Let,

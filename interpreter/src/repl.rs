@@ -5,12 +5,12 @@ pub fn start(){
     let prompt: &'static str = ">> ";
 
     let mut reader = std::io::stdin();
-    let mut read_buf = String::from("");
     loop {
         print!("{}", prompt);
         std::io::stdout().flush().unwrap();
+        let mut read_buf = String::from("");
         if let Ok(_) = reader.read_line(&mut read_buf){
-            let mut l = lexer::Lexer::new(read_buf.clone());
+            let mut l = lexer::Lexer::new(&read_buf[..]);
             loop {
                 let token = l.next_token();
                 println!("{}", token);
