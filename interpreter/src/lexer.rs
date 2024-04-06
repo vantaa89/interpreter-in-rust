@@ -9,7 +9,7 @@ pub struct Lexer{
 }
 
 impl Lexer{
-    fn new(input: String) -> Lexer {
+    pub fn new(input: String) -> Lexer {
         let mut l = Lexer {input, position: 0, read_position: 0, ch: '\0'};
         l.read_char();
         l
@@ -25,7 +25,7 @@ impl Lexer{
         self.read_position += 1;
     }
 
-    fn next_token(&mut self) -> Token{
+    pub fn next_token(&mut self) -> Token{
         self.skip_whitespace();
 
         let tok = match self.ch {
@@ -183,13 +183,6 @@ mod lexer_test{
             Token::Rbrace,
             Token::Eof
             ];
-
-
-            // if(5 < 10) {
-            //     return true;
-            // } else {
-            //     return false;
-            // }
 
         let mut lexer = Lexer::new(input);
         
