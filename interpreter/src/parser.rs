@@ -5,7 +5,8 @@ use std::rc::Rc;
 pub struct Parser<'a> {
     l: &'a mut lexer::Lexer<'a>,
     pub cur_token: Option<token::Token>,
-    pub peek_token: Option<token::Token>
+    pub peek_token: Option<token::Token>, 
+    errors: Vec<String>
 }
 
 impl<'a> Parser<'a> {
@@ -13,7 +14,8 @@ impl<'a> Parser<'a> {
         let mut p = Parser{
             l: lexer, 
             cur_token: None, 
-            peek_token: None
+            peek_token: None,
+            errors: Vec::<String>::new()
         };
         // set cur_token and peek_token by reading twice
         p.next_token();
@@ -32,6 +34,8 @@ impl<'a> Parser<'a> {
             let statement = self.parse_statement();
             if let Some(statement) = statement {
                 program.statements.push(statement);
+            } else {
+                return None;    // Parsing failed    
             }
         }
         Some(program)
@@ -51,17 +55,19 @@ impl<'a> Parser<'a> {
         let token = self.cur_token.clone().unwrap();
         let name: Rc<ast::Identifier>;
         let value: Rc<dyn ast::Expression> = Rc::new(ast::Identifier{token: token::Token::Eof, value: "".to_string()}); // value is a placeholder
-        if let token::Token::Ident(ident_name) = self.peek_token.clone().unwrap() {
-            name = Rc::new(ast::Identifier{token: token::Token::Ident(ident_name.clone()), value: ident_name.clone()});
-            self.next_token();  // consume ident
+        if self.expect_peek(token::Token::Ident("".to_string())) {
+            if let token::Token::Ident(ident_name) =  self.cur_token.clone().unwrap() {
+                name = Rc::new(ast::Identifier{token: token::Token::Ident(ident_name.clone()), value: ident_name.clone()});
+            } else {
+                panic!();
+            }
         } else {
             return None;
         }
 
-        if self.peek_token.clone().unwrap() != token::Token::Assign {
+        if !self.expect_peek(token::Token::Assign){
             return None;
         }
-        self.next_token();      // consume =
 
         while self.cur_token.clone().unwrap() != token::Token::Semicolon {
             self.next_token();
@@ -69,6 +75,39 @@ impl<'a> Parser<'a> {
         }
         self.next_token();      // consume semicolon
         return Some(Box::new(ast::LetStatement{token, name, value}));
+    }
+
+    fn expect_peek(&mut self, t: token::Token) -> bool {
+        if self.peek_token_is(t.clone()) {
+            self.next_token();
+            return true;
+        } else {
+            self.peek_error(t.clone());
+            println!("{}", self.errors[self.errors.len()-1]);
+            return false;
+        }
+    }
+
+    // checks if the type of token matches
+    // the literals are unimportant for Token::Int or Token::Ident
+    fn peek_token_is(&mut self, t: token::Token) -> bool {
+        if self.peek_token.clone().unwrap() == t {
+            return true;
+        }
+        match (self.peek_token.clone().unwrap(), t) {
+            (token::Token::Int(_), token::Token::Int(_)) => true,
+            (token::Token::Ident(_), token::Token::Ident(_)) => true,
+            _ => false
+        }
+    }
+
+    fn errors(&self) -> Vec<String> {
+        self.errors.clone()
+    }
+
+    fn peek_error(&mut self, t: token::Token){
+        let msg = format!("expected new token to be {}, got {} instead", t, self.peek_token.clone().unwrap());
+        self.errors.push(msg);
     }
 }
 
@@ -78,7 +117,7 @@ mod token_test{
     #[test]
     fn test_let_statements(){
         let input = "
-        let x = 5;
+        let x  5;
         let y = 10;
         let foobar = 8383838;
         ";
@@ -88,13 +127,16 @@ mod token_test{
             Some(p) => p,
             None => panic!("parse_program() returned None")
         };
+        check_parser_error(&parser);
         if program.statements.len() != 3{
             panic!("program.statements does not contain 3 statements, got={}", program.statements.len())
         }
         let expected_identifiers = ["x", "y", "foobar"];
         for i in 0..3 {
             let ident = expected_identifiers[i].to_string();
-            test_let_statement(program.statements[i].as_ref() as &dyn ast::Statement, ident);   
+            if !test_let_statement(program.statements[i].as_ref() as &dyn ast::Statement, ident){
+                return;
+            }
         }
 
     }
@@ -118,5 +160,17 @@ mod token_test{
             return false;
         }
         true
+    }
+
+    fn check_parser_error(p: &Parser){
+        let errors = p.errors();
+        if errors.len() == 0{
+            return;
+        }
+        println!("parser has {} errors", errors.len());
+        for msg in &errors{
+            println!("parser error: {}", msg);
+        }
+        panic!();
     }
 }
