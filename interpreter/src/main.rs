@@ -1,6 +1,9 @@
 mod token;
 mod lexer;
 mod repl;
+mod ast;
+mod parser;
+
 use users::{get_user_by_uid, get_current_uid};
 
 fn main() {

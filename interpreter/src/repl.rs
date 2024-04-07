@@ -4,7 +4,7 @@ use std::io::Write;
 pub fn start(){
     let prompt: &'static str = ">> ";
 
-    let mut reader = std::io::stdin();
+    let reader = std::io::stdin();
     loop {
         print!("{}", prompt);
         std::io::stdout().flush().unwrap();
@@ -19,6 +19,5 @@ pub fn start(){
                 }   
             }
         }
-
     }
 }
