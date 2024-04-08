@@ -37,7 +37,7 @@ pub struct LetStatement {               // e.g. let x = 5;
     pub value: Rc<dyn Expression>       // The expression that generates the value, e.g. 5
 }
 
-impl Node for LetStatement{
+impl Node for LetStatement {
     fn token_literal(&self) -> String {
         format!("{}", self.token)
     }
@@ -48,6 +48,24 @@ impl Statement for LetStatement {
     fn as_any(&self) -> &dyn Any {
         self
     }  
+}
+
+pub struct ReturnStatement {
+    pub token: token::Token,
+    pub return_value: Rc<dyn Expression>
+}
+
+impl Node for ReturnStatement {
+    fn token_literal(&self) -> String {
+        format!("{}", self.token)
+    }
+}
+
+impl Statement for ReturnStatement {
+    fn statement_node(&self) {}
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
 }
 
 pub struct Identifier {

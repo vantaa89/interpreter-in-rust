@@ -46,6 +46,10 @@ impl<'a> Parser<'a> {
             token::Token::Let => {
                 let parsed_let = self.parse_let_statement();
                 parsed_let.map(|boxed| Box::new(*boxed) as Box<dyn ast::Statement>)
+            },
+            token::Token::Return => {
+                let parsed_return = self.parse_return_statement();
+                parsed_return.map(|boxed| Box::new(*boxed) as Box<dyn ast::Statement>)
             }
             _ => None
         }
@@ -78,6 +82,18 @@ impl<'a> Parser<'a> {
         }
         self.next_token();      // consume semicolon
         return Some(Box::new(ast::LetStatement{token, name, value}));
+    }
+
+    fn parse_return_statement(&mut self) -> Option<Box<ast::ReturnStatement>> {
+        let token = self.cur_token.clone().unwrap();
+        let return_value: Rc<dyn ast::Expression> = Rc::new(ast::Identifier{token: token::Token::Eof, value: "".to_string()}); // placeholder
+
+        while *self.cur_token.as_ref().unwrap() != token::Token::Semicolon {
+            self.next_token();
+            // TODO
+        }
+        self.next_token();      // consume semicolon
+        return Some(Box::new(ast::ReturnStatement{token, return_value}));
     }
 
     fn expect_peek(&mut self, t: token::Token) -> bool {
@@ -163,6 +179,34 @@ mod token_test{
             return false;
         }
         true
+    }
+
+    #[test]
+    fn test_return_statements() {
+        let input = "return 5;
+        return 10;
+        return 993322;";
+
+        let mut lexer = lexer::Lexer::new(input);
+        let mut parser = Parser::new(&mut lexer);
+        let program = match parser.parse_program() {
+            Some(p) => p,
+            None => panic!("parse_program() returned None")
+        };
+        check_parser_error(&parser);
+        if program.statements.len() != 3{
+            panic!("program.statements does not contain 3 statements, got={}", program.statements.len())
+        }
+        for i in 0..3 {
+            let return_statement = program.statements[i].as_any().downcast_ref::<ast::ReturnStatement>();
+            if let Some(statement) = return_statement {
+                if statement.token_literal() != "return" {
+                    println!("statement.token_literal() not 'return', got {}.", statement.token_literal());
+                }
+            } else {
+                println!("statement not ast::ReturnStatement.");
+            }
+        }
     }
 
     fn check_parser_error(p: &Parser){
