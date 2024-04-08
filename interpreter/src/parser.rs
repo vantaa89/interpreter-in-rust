@@ -30,7 +30,7 @@ impl<'a> Parser<'a> {
 
     fn parse_program(&mut self) -> Option<ast::Program> {
         let mut program = ast::Program{statements: vec![]};
-        while self.cur_token.clone().unwrap() != token::Token::Eof {
+        while *self.cur_token.as_ref().unwrap() != token::Token::Eof {
             let statement = self.parse_statement();
             if let Some(statement) = statement {
                 program.statements.push(statement);
@@ -42,7 +42,7 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_statement(&mut self) -> Option<Box<dyn ast::Statement>> {
-        match self.cur_token.clone().unwrap() {
+        match self.cur_token.as_ref().unwrap() {
             token::Token::Let => {
                 let parsed_let = self.parse_let_statement();
                 parsed_let.map(|boxed| Box::new(*boxed) as Box<dyn ast::Statement>)
@@ -56,7 +56,7 @@ impl<'a> Parser<'a> {
         let name: Rc<ast::Identifier>;
         let value: Rc<dyn ast::Expression> = Rc::new(ast::Identifier{token: token::Token::Eof, value: "".to_string()}); // value is a placeholder
         if self.expect_peek(token::Token::Ident("".to_string())) {
-            if let token::Token::Ident(ident_name) =  self.cur_token.clone().unwrap() {
+            if let token::Token::Ident(ident_name) =  self.cur_token.as_ref().unwrap() {
                 name = Rc::new(ast::Identifier{token: token::Token::Ident(ident_name.clone()), value: ident_name.clone()});
             } else {
                 panic!();
@@ -69,7 +69,7 @@ impl<'a> Parser<'a> {
             return None;
         }
 
-        while self.cur_token.clone().unwrap() != token::Token::Semicolon {
+        while *self.cur_token.as_ref().unwrap() != token::Token::Semicolon {
             self.next_token();
             // TODO
         }
@@ -78,11 +78,11 @@ impl<'a> Parser<'a> {
     }
 
     fn expect_peek(&mut self, t: token::Token) -> bool {
-        if self.peek_token_is(t.clone()) {
+        if self.peek_token_is(&t) {
             self.next_token();
             return true;
         } else {
-            self.peek_error(t.clone());
+            self.peek_error(&t);
             println!("{}", self.errors[self.errors.len()-1]);
             return false;
         }
@@ -90,11 +90,11 @@ impl<'a> Parser<'a> {
 
     // checks if the type of token matches
     // the literals are unimportant for Token::Int or Token::Ident
-    fn peek_token_is(&mut self, t: token::Token) -> bool {
-        if self.peek_token.clone().unwrap() == t {
+    fn peek_token_is(&mut self, t: &token::Token) -> bool {
+        if *self.peek_token.as_ref().unwrap() == *t {
             return true;
         }
-        match (self.peek_token.clone().unwrap(), t) {
+        match (self.peek_token.as_ref().unwrap(), t) {
             (token::Token::Int(_), token::Token::Int(_)) => true,
             (token::Token::Ident(_), token::Token::Ident(_)) => true,
             _ => false
@@ -105,8 +105,8 @@ impl<'a> Parser<'a> {
         self.errors.clone()
     }
 
-    fn peek_error(&mut self, t: token::Token){
-        let msg = format!("expected new token to be {}, got {} instead", t, self.peek_token.clone().unwrap());
+    fn peek_error(&mut self, t: &token::Token){
+        let msg = format!("expected new token to be {}, got {} instead", *t, self.peek_token.as_ref().unwrap());
         self.errors.push(msg);
     }
 }
@@ -117,7 +117,7 @@ mod token_test{
     #[test]
     fn test_let_statements(){
         let input = "
-        let x  5;
+        let x = 5;
         let y = 10;
         let foobar = 8383838;
         ";
