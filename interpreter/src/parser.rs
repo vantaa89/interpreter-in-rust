@@ -54,8 +54,11 @@ impl<'a> Parser<'a> {
     fn parse_let_statement(&mut self) -> Option<Box<ast::LetStatement>> {
         let token = self.cur_token.clone().unwrap();
         let name: Rc<ast::Identifier>;
-        let value: Rc<dyn ast::Expression> = Rc::new(ast::Identifier{token: token::Token::Eof, value: "".to_string()}); // value is a placeholder
-        if self.expect_peek(token::Token::Ident("".to_string())) {
+        let value: Rc<dyn ast::Expression> = Rc::new(ast::Identifier{token: token::Token::Eof, value: "".to_string()}); // placeholder
+        
+        let ident_token = token::Token::Ident("".to_string());
+
+        if self.expect_peek(ident_token) {      // expect an identifier token to appear
             if let token::Token::Ident(ident_name) =  self.cur_token.as_ref().unwrap() {
                 name = Rc::new(ast::Identifier{token: token::Token::Ident(ident_name.clone()), value: ident_name.clone()});
             } else {
@@ -91,14 +94,14 @@ impl<'a> Parser<'a> {
     // checks if the type of token matches
     // the literals are unimportant for Token::Int or Token::Ident
     fn peek_token_is(&mut self, t: &token::Token) -> bool {
-        if *self.peek_token.as_ref().unwrap() == *t {
+        let peek_token = self.peek_token.as_ref().unwrap();
+        if *peek_token == *t {
             return true;
         }
-        match (self.peek_token.as_ref().unwrap(), t) {
-            (token::Token::Int(_), token::Token::Int(_)) => true,
-            (token::Token::Ident(_), token::Token::Ident(_)) => true,
-            _ => false
-        }
+        if peek_token.is_ident() && t.is_ident() || peek_token.is_int() && t.is_int() {
+            return true;
+        } 
+        return false;
     }
 
     fn errors(&self) -> Vec<String> {

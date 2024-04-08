@@ -1,7 +1,8 @@
 use std::fmt;
 use std::collections::HashMap;
+use enum_as_inner::EnumAsInner;
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, EnumAsInner)]
 pub enum Token {
     Illegal(char),
     Eof,
